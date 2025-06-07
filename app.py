@@ -12,8 +12,8 @@ CORS(app)
 
 # Load model and scaler
 try:
-    model = joblib.load("models/random_forest_model_v1.7.0.joblib")  # Correct file path if necessary
-    scaler = joblib.load("models/scaler_v1.7.0.joblib")  # Correct file path if necessary
+    model = joblib.load("random_forest_model_v1.7.0.joblib")  # Correct file path if necessary
+    scaler = joblib.load("scaler_v1.7.0.joblib")  # Correct file path if necessary
     print("✅ Model and scaler loaded successfully.")
 except Exception as e:
     print(f"Error loading model or scaler: {e}")  # This will catch any errors during the loading process
