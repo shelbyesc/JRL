@@ -12,17 +12,21 @@ CORS(app)
 
 # Load model and scaler
 try:
-    model = joblib.load("random_forest_model_v1.7.0.joblib")  # Correct file path if necessary
-    scaler = joblib.load("scaler_v1.7.0.joblib")  # Correct file path if necessary
+    model = joblib.load("random_forest_model_v1.7.0.joblib")
+    scaler = joblib.load("scaler_v1.7.0.joblib")
     print("✅ Model and scaler loaded successfully.")
 except Exception as e:
-    print(f"Error loading model or scaler: {e}")  # This will catch any errors during the loading process
+    print(f"Error loading model or scaler: {e}")
 
 feature_names = [
     "shaftangle", "offset", "headdiameter", "lateraledge", "acetabdiameter",
     "alphaangle", "combinednecrotic", "maxpercent", "percentnecrotic", "volum",
     "labraltear", "age", "male", "white", "toxic", "medical", "idiopathic", "trauma"
 ]
+
+@app.route("/", methods=["GET"])
+def home():
+    return "✅ JRL API is running. Try POST to /predict."
 
 @app.route("/predict", methods=["POST"])
 def predict():
