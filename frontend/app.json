@@ -1,0 +1,30 @@
+{
+  "expo": {
+    "name": "CollapseRiskApp",
+    "slug": "collapseriskapp",
+    "version": "1.0.2",
+    "sdkVersion": "50.0.0",
+    "owner": "salshel6",
+    "orientation": "portrait",
+    "platforms": ["ios", "android", "web"],
+    "userInterfaceStyle": "light",
+    "icon": "./assets/icon.png",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "ios": {
+      "bundleIdentifier": "com.salshel6.collapseriskapp",
+      "buildNumber": "10",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "2f5e8054-569a-4921-a4df-f5c3f18792b3"
+      }
+    }
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "cli": {
+    "version": ">=3.13.0",
+    "appVersionSource": "remote"
+  },
+  "build": {
+    "preview": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "ios": {
+        "simulator": false,
+        "image": "latest"
+      }
+    },
+    "production": {
+      "developmentClient": false,
+      "distribution": "store",
+      "ios": {
+        "simulator": false,
+        "image": "latest"
+      },
+      "autoIncrement": true
+    }
+  },
+  "submit": {
+    "production": {}
+  }
+}
