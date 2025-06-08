@@ -19,6 +19,8 @@ const featureList = [
   "labraltear", "age", "male", "white", "toxic", "medical", "idiopathic", "trauma"
 ];
 
+const binaryFields = ["male", "white", "toxic", "medical", "idiopathic", "trauma"];
+
 export default function PredictScreen() {
   const [inputs, setInputs] = useState({});
   const [result, setResult] = useState(null);
@@ -65,6 +67,9 @@ export default function PredictScreen() {
           {featureList.map((key) => (
             <View key={key} style={styles.inputGroup}>
               <Text style={styles.label}>{key}</Text>
+              {binaryFields.includes(key) && (
+                <Text style={styles.helper}>Enter 0 for No, 1 for Yes</Text>
+              )}
               <TextInput
                 keyboardType="numeric"
                 style={styles.input}
@@ -120,6 +125,11 @@ const styles = StyleSheet.create({
     marginBottom: 4,
     fontSize: 14,
     fontWeight: '600',
+  },
+  helper: {
+    fontSize: 12,
+    color: '#666',
+    marginBottom: 4,
   },
   input: {
     borderWidth: 1,
