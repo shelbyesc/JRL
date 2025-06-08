@@ -7,6 +7,10 @@ import {
   TouchableOpacity,
   StyleSheet,
   Alert,
+  KeyboardAvoidingView,
+  TouchableWithoutFeedback,
+  Keyboard,
+  Platform,
 } from 'react-native';
 
 const featureList = [
@@ -44,41 +48,63 @@ export default function PredictScreen() {
     }
   };
 
-  return (
-    <ScrollView style={styles.container}>
-      <Text style={styles.title}>Collapse Risk Prediction</Text>
-      {featureList.map((key) => (
-        <View key={key} style={styles.inputGroup}>
-          <Text style={styles.label}>{key}</Text>
-          <TextInput
-            keyboardType="numeric"
-            style={styles.input}
-            onChangeText={(text) => handleChange(key, text)}
-          />
-        </View>
-      ))}
-      <TouchableOpacity style={styles.button} onPress={handleSubmit}>
-        <Text style={styles.buttonText}>Predict</Text>
-      </TouchableOpacity>
+  const handleReset = () => {
+    setInputs({});
+    setResult(null);
+  };
 
-      {result && (
-        <View style={styles.result}>
-          <Text style={styles.prediction}>
-            Prediction: {result.prediction === 1 ? "High Risk" : "Low Risk"}
-          </Text>
-          <Text style={styles.probability}>
-            Probability: {result.probability}%
-          </Text>
-        </View>
-      )}
-    </ScrollView>
+  return (
+    <KeyboardAvoidingView
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      style={{ flex: 1 }}
+    >
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+        <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
+          <Text style={styles.title}>Collapse Risk Prediction</Text>
+
+          {featureList.map((key) => (
+            <View key={key} style={styles.inputGroup}>
+              <Text style={styles.label}>{key}</Text>
+              <TextInput
+                keyboardType="numeric"
+                style={styles.input}
+                onChangeText={(text) => handleChange(key, text)}
+                value={inputs[key]?.toString() || ''}
+              />
+            </View>
+          ))}
+
+          <TouchableOpacity style={styles.button} onPress={handleSubmit}>
+            <Text style={styles.buttonText}>Predict</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.resetButton} onPress={handleReset}>
+            <Text style={styles.resetButtonText}>Reset</Text>
+          </TouchableOpacity>
+
+          {result && (
+            <View style={styles.result}>
+              <Text style={styles.prediction}>
+                Prediction: {result.prediction === 1 ? "High Risk" : "Low Risk"}
+              </Text>
+              <Text style={styles.probability}>
+                Probability: {result.probability}%
+              </Text>
+            </View>
+          )}
+
+          {/* Bottom padding to avoid edge clipping */}
+          <View style={{ height: 40 }} />
+        </ScrollView>
+      </TouchableWithoutFeedback>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     padding: 20,
-    marginTop: 40,
+    paddingBottom: 60,
     backgroundColor: '#f5f5f5',
   },
   title: {
@@ -113,6 +139,18 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 17,
     fontWeight: '600',
+  },
+  resetButton: {
+    backgroundColor: '#ccc',
+    padding: 14,
+    borderRadius: 8,
+    marginTop: 16,
+  },
+  resetButtonText: {
+    color: '#333',
+    textAlign: 'center',
+    fontSize: 16,
+    fontWeight: '500',
   },
   result: {
     marginTop: 30,
