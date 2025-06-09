@@ -52,7 +52,7 @@ export default function PredictScreen() {
       if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
       const json = await response.json();
       setResult(json);
-      if (!collapseRisk) setCollapseRisk(json.prediction);
+      if (!collapseRisk) setCollapseRisk(json.prediction.toString());
     } catch (error) {
       console.error("API request failed:", error);
       Alert.alert("Error", "Could not connect to the prediction API.");
@@ -133,7 +133,7 @@ export default function PredictScreen() {
                 keyboardType="numeric"
                 style={styles.input}
                 onChangeText={(text) => handleChange(key, text)}
-                value={inputs[key]?.toString() || ''}
+                value={inputs[key] !== undefined ? String(inputs[key]) : ''}
               />
             </View>
           ))}
@@ -174,32 +174,34 @@ export default function PredictScreen() {
 
           <View style={{ height: 50 }} />
 
-          {/* Code entry modal */}
+          {/* ✅ Fixed Modal */}
           <Modal visible={modalVisible} transparent={true} animationType="slide">
-            <View style={styles.modalOverlay}>
-              <View style={styles.modalContainer}>
-                <Text style={styles.label}>Enter Code to submit</Text>
-                <TextInput style={styles.input} value={code} onChangeText={setCode} />
-                <Text style={styles.helper}>Request a code to submit</Text>
-                {["email", "institution", "first", "last"].map((field) => (
-                  <TextInput
-                    key={field}
-                    placeholder={field.charAt(0).toUpperCase() + field.slice(1)}
-                    style={styles.input}
-                    value={requestFields[field]}
-                    onChangeText={(text) =>
-                      setRequestFields({ ...requestFields, [field]: text })
-                    }
-                  />
-                ))}
-                <TouchableOpacity style={styles.button} onPress={handleRequestCode}>
-                  <Text style={styles.buttonText}>Request Code</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.button} onPress={handleConfirmSubmit}>
-                  <Text style={styles.buttonText}>Confirm Submit</Text>
-                </TouchableOpacity>
+            <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+              <View style={styles.modalOverlay}>
+                <View style={styles.modalContainer}>
+                  <Text style={styles.label}>Enter Code to submit</Text>
+                  <TextInput style={styles.input} value={code} onChangeText={setCode} />
+                  <Text style={styles.helper}>Request a code to submit</Text>
+                  {["email", "institution", "first", "last"].map((field) => (
+                    <TextInput
+                      key={field}
+                      placeholder={field.charAt(0).toUpperCase() + field.slice(1)}
+                      style={styles.input}
+                      value={requestFields[field]}
+                      onChangeText={(text) =>
+                        setRequestFields({ ...requestFields, [field]: text })
+                      }
+                    />
+                  ))}
+                  <TouchableOpacity style={styles.button} onPress={handleRequestCode}>
+                    <Text style={styles.buttonText}>Request Code</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={styles.button} onPress={handleConfirmSubmit}>
+                    <Text style={styles.buttonText}>Confirm Submit</Text>
+                  </TouchableOpacity>
+                </View>
               </View>
-            </View>
+            </TouchableWithoutFeedback>
           </Modal>
         </ScrollView>
       </TouchableWithoutFeedback>
