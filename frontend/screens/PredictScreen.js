@@ -51,6 +51,8 @@ export default function PredictScreen() {
   };
 
   const handleSubmit = async () => {
+  console.log("🟦 Submit button clicked");
+
     try {
       const response = await fetch("https://jrl.onrender.com/predict", {
         method: "POST",
@@ -58,6 +60,7 @@ export default function PredictScreen() {
         body: JSON.stringify(inputs),
       });
       const json = await response.json();
+      console.log("✅ Prediction result:", json);
       setResult(json);
       if (!collapseRisk) setCollapseRisk(json.prediction.toString());
     } catch (error) {
@@ -66,27 +69,36 @@ export default function PredictScreen() {
   };
 
   const handleDatabaseSubmit = () => {
-  if (collapseRisk === result?.prediction?.toString()) {
+  console.log("🟨 Submit to database clicked");
+
+  const trimmedRisk = collapseRisk.trim();
+  if (trimmedRisk === result?.prediction?.toString()) {
+    console.log('⚠️ Auto-filled value matches prediction. Clearing...');
     setCollapseRisk('');
     Alert.alert("Manual Entry Required", "Please enter collapse risk manually (0 or 1).");
     return;
   }
-  if (collapseRisk !== '0' && collapseRisk !== '1') {
+  if (trimmedRisk !== '0' && trimmedRisk !== '1') {
     Alert.alert("Invalid Entry", "Collapse risk must be 0 or 1.");
     return;
   }
 
-    if (collapseRisk !== '0' && collapseRisk !== '1') {
+    if (trimmedRisk !== '0' && trimmedRisk !== '1') {
       Alert.alert("Invalid Entry", "Collapse risk must be 0 or 1.");
       return;
     }
-    setModalVisible(true);
+    console.log('✅ Valid manual entry:', trimmedRisk);
+  setCollapseRisk(trimmedRisk);
+  setModalVisible(true);
   };
 
   const handleRequestCode = async () => {
+  console.log("📩 Request code clicked");
+
     const emailIsValid = /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(requestFields.email);
     if (!emailIsValid) {
-      Alert.alert("Invalid Email", "Please enter a valid email address.");
+      console.log('❌ Invalid email entered');
+    Alert.alert("Invalid Email", "Please enter a valid email address.");
       return;
     }
     const oneTime = `ONE-${Math.random().toString(36).substr(2, 6).toUpperCase()}`;
@@ -102,6 +114,7 @@ export default function PredictScreen() {
       }),
     });
 
+    console.log('✅ Code request email sent');
     Alert.alert("Codes Sent", "Codes have been sent to ShelbyEsc@gmail.com.");
     setRequestFields({ email: '', institution: '', first: '', last: '' });
   };
@@ -139,6 +152,7 @@ export default function PredictScreen() {
         copyToCacheDirectory: true
       });
       if (res.type === 'success') {
+        console.log('📄 File selected:', res.name);
         setSelectedFile(res);
       }
     } catch (error) {
@@ -147,6 +161,7 @@ export default function PredictScreen() {
   };
 
   const sendExcelFile = async () => {
+    console.log('📤 Simulated Excel file upload triggered');
     Alert.alert("Upload Placeholder", "Simulated file upload complete.");
     setExcelModalVisible(false);
     setSelectedFile(null);
@@ -155,6 +170,7 @@ export default function PredictScreen() {
   const handleReset = () => {
     setInputs({});
     setResult(null);
+    console.log('⚠️ Auto-filled value matches prediction. Clearing...');
     setCollapseRisk('');
   };
 
