@@ -118,11 +118,16 @@ export default function PredictScreen() {
   };
 
   const pickExcelFile = async () => {
-    const res = await DocumentPicker.getDocumentAsync({
-      type: ['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/vnd.ms-excel']
-    });
-    if (res.type === 'success') {
-      setSelectedFile(res);
+    try {
+      const res = await DocumentPicker.getDocumentAsync({
+        type: ['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/vnd.ms-excel'],
+        copyToCacheDirectory: true
+      });
+      if (res.type === 'success') {
+        setSelectedFile(res);
+      }
+    } catch (error) {
+      Alert.alert("Error", "Failed to pick Excel file.");
     }
   };
 
@@ -181,7 +186,6 @@ export default function PredictScreen() {
             <Text style={styles.resetButtonText}>Reset</Text>
           </TouchableOpacity>
 
-          {/* Code submission modal */}
           <Modal visible={modalVisible} transparent animationType="slide">
             <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
               <View style={styles.modalOverlay}>
@@ -212,7 +216,6 @@ export default function PredictScreen() {
             </TouchableWithoutFeedback>
           </Modal>
 
-          {/* Excel upload modal */}
           <Modal visible={excelModalVisible} transparent animationType="slide">
             <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
               <View style={styles.modalOverlay}>
@@ -249,9 +252,6 @@ const styles = StyleSheet.create({
   buttonText: { color: '#fff', textAlign: 'center', fontSize: 17, fontWeight: '600' },
   resetButton: { backgroundColor: '#ccc', padding: 14, borderRadius: 8, marginTop: 12 },
   resetButtonText: { color: '#333', textAlign: 'center', fontSize: 16, fontWeight: '500' },
-  result: { marginTop: 30, padding: 15, backgroundColor: '#e6f7ff', borderRadius: 8 },
-  prediction: { fontSize: 18, fontWeight: 'bold' },
-  probability: { fontSize: 16, marginTop: 5 },
   modalOverlay: { flex: 1, justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.5)', padding: 20 },
   modalContainer: { backgroundColor: '#fff', borderRadius: 10, padding: 20 },
 });
