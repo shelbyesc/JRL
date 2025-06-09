@@ -58,6 +58,7 @@ export default function PredictScreen() {
         body: JSON.stringify(inputs),
       });
       const json = await response.json();
+      console.log("Prediction result:", json);
       setResult(json);
       if (!collapseRisk) setCollapseRisk(json.prediction.toString());
     } catch (error) {
