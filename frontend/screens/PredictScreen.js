@@ -28,7 +28,6 @@ export default function PredictScreen() {
   const [inputs, setInputs] = useState({});
   const [result, setResult] = useState(null);
   const [collapseRisk, setCollapseRisk] = useState('');
-  const [wasManuallyEdited, setWasManuallyEdited] = useState(false);
   const [code, setCode] = useState('');
   const [modalVisible, setModalVisible] = useState(false);
   const [requestFields, setRequestFields] = useState({ email: '', institution: '', first: '', last: '' });
@@ -77,26 +76,6 @@ export default function PredictScreen() {
       Alert.alert("Manual Entry Required", "Please manually enter collapse risk (0 or 1).");
       return;
     }
-  }
-
-  if (trimmedRisk !== '0' && trimmedRisk !== '1') {
-    console.log("❌ Invalid collapse risk entered:", trimmedRisk);
-    Alert.alert("Invalid Entry", "Collapse risk must be 0 or 1.");
-    return;
-  }
-
-  console.log("✅ Valid manual entry:", trimmedRisk);
-  setCollapseRisk(trimmedRisk);
-  setModalVisible(true);
-};
-  console.log("🟨 Submit to database clicked");
-  const trimmedRisk = collapseRisk.trim();
-
-  if (!wasManuallyEdited) {
-    console.log("⚠️ Submission blocked: not manually edited");
-    setCollapseRisk('');
-    Alert.alert("Manual Entry Required", "Please manually enter collapse risk (0 or 1).");
-    return;
   }
 
   if (trimmedRisk !== '0' && trimmedRisk !== '1') {
@@ -233,10 +212,7 @@ export default function PredictScreen() {
             keyboardType="numeric"
             style={styles.input}
             value={collapseRisk}
-            onChangeText={(text) => {
-              setCollapseRisk(text);
-              setWasManuallyEdited(true);
-            }}
+            onChangeText={setCollapseRisk}
           />
 
           <TouchableOpacity style={styles.button} onPress={handleDatabaseSubmit}>
