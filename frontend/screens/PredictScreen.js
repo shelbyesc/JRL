@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import {
   ScrollView,
@@ -11,9 +12,10 @@ import {
   TouchableWithoutFeedback,
   Keyboard,
   Platform,
-  Modal,
+  Modal
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as DocumentPicker from 'expo-document-picker';
 
 const featureList = [
   "shaftangle", "offset", "headdiameter", "lateraledge", "acetabdiameter",
@@ -29,6 +31,8 @@ export default function PredictScreen() {
   const [code, setCode] = useState('');
   const [modalVisible, setModalVisible] = useState(false);
   const [requestFields, setRequestFields] = useState({ email: '', institution: '', first: '', last: '' });
+  const [excelModalVisible, setExcelModalVisible] = useState(false);
+  const [selectedFile, setSelectedFile] = useState(null);
 
   useEffect(() => {
     (async () => {
@@ -38,6 +42,10 @@ export default function PredictScreen() {
   }, []);
 
   const handleChange = (key, value) => {
+    if (binaryFields.includes(key) && value !== '0' && value !== '1') {
+      Alert.alert("Input Error", `${key} must be 0 or 1`);
+      return;
+    }
     const num = parseFloat(value);
     setInputs({ ...inputs, [key]: isNaN(num) ? 0 : num });
   };
@@ -49,20 +57,17 @@ export default function PredictScreen() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(inputs),
       });
-      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
       const json = await response.json();
       setResult(json);
       if (!collapseRisk) setCollapseRisk(json.prediction.toString());
     } catch (error) {
-      console.error("API request failed:", error);
       Alert.alert("Error", "Could not connect to the prediction API.");
     }
   };
 
   const handleDatabaseSubmit = () => {
-    if (!collapseRisk || collapseRisk === result?.prediction?.toString()) {
-      Alert.alert("Manual Entry Required", "Please manually enter the collapse risk value.");
-      setCollapseRisk('');
+    if (collapseRisk !== '0' && collapseRisk !== '1') {
+      Alert.alert("Invalid Entry", "Collapse risk must be 0 or 1.");
       return;
     }
     setModalVisible(true);
@@ -82,7 +87,7 @@ export default function PredictScreen() {
       }),
     });
 
-    Alert.alert("Codes Sent", "Codes have been sent for approval to ShelbyEsc@gmail.com.");
+    Alert.alert("Codes Sent", "Codes have been sent to ShelbyEsc@gmail.com.");
     setRequestFields({ email: '', institution: '', first: '', last: '' });
   };
 
@@ -100,7 +105,7 @@ export default function PredictScreen() {
     });
 
     if (response.ok) {
-      Alert.alert("Submitted", "Data submitted and stored.");
+      Alert.alert("Submitted", "Data submitted successfully.");
     } else {
       Alert.alert("Error", "Submission failed.");
     }
@@ -109,8 +114,22 @@ export default function PredictScreen() {
   };
 
   const handleExcelSubmit = async () => {
-    await fetch("https://jrl.onrender.com/submit_excel", { method: "POST" });
-    Alert.alert("Excel Uploaded", "Excel sheet submitted to database.");
+    setExcelModalVisible(true);
+  };
+
+  const pickExcelFile = async () => {
+    const res = await DocumentPicker.getDocumentAsync({
+      type: ['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/vnd.ms-excel']
+    });
+    if (res.type === 'success') {
+      setSelectedFile(res);
+    }
+  };
+
+  const sendExcelFile = async () => {
+    Alert.alert("Upload Placeholder", "Simulated file upload complete.");
+    setExcelModalVisible(false);
+    setSelectedFile(null);
   };
 
   const handleReset = () => {
@@ -128,7 +147,7 @@ export default function PredictScreen() {
           {featureList.map((key) => (
             <View key={key} style={styles.inputGroup}>
               <Text style={styles.label}>{key}</Text>
-              {binaryFields.includes(key) && <Text style={styles.helper}>Enter 0 for No, 1 for Yes</Text>}
+              {binaryFields.includes(key) && <Text style={styles.helper}>Enter 0 or 1</Text>}
               <TextInput
                 keyboardType="numeric"
                 style={styles.input}
@@ -143,7 +162,8 @@ export default function PredictScreen() {
           </TouchableOpacity>
 
           <TextInput
-            placeholder="Enter collapse risk (manual)"
+            placeholder="Enter collapse risk (0 or 1)"
+            keyboardType="numeric"
             style={styles.input}
             value={collapseRisk}
             onChangeText={setCollapseRisk}
@@ -161,21 +181,8 @@ export default function PredictScreen() {
             <Text style={styles.resetButtonText}>Reset</Text>
           </TouchableOpacity>
 
-          {result && (
-            <View style={styles.result}>
-              <Text style={styles.prediction}>
-                Prediction: {result.prediction === 1 ? "High Risk" : "Low Risk"}
-              </Text>
-              <Text style={styles.probability}>
-                Probability: {result.probability}%
-              </Text>
-            </View>
-          )}
-
-          <View style={{ height: 50 }} />
-
-          {/* ✅ Fixed Modal */}
-          <Modal visible={modalVisible} transparent={true} animationType="slide">
+          {/* Code submission modal */}
+          <Modal visible={modalVisible} transparent animationType="slide">
             <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
               <View style={styles.modalOverlay}>
                 <View style={styles.modalContainer}>
@@ -188,9 +195,7 @@ export default function PredictScreen() {
                       placeholder={field.charAt(0).toUpperCase() + field.slice(1)}
                       style={styles.input}
                       value={requestFields[field]}
-                      onChangeText={(text) =>
-                        setRequestFields({ ...requestFields, [field]: text })
-                      }
+                      onChangeText={(text) => setRequestFields({ ...requestFields, [field]: text })}
                     />
                   ))}
                   <TouchableOpacity style={styles.button} onPress={handleRequestCode}>
@@ -198,6 +203,30 @@ export default function PredictScreen() {
                   </TouchableOpacity>
                   <TouchableOpacity style={styles.button} onPress={handleConfirmSubmit}>
                     <Text style={styles.buttonText}>Confirm Submit</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={styles.resetButton} onPress={() => setModalVisible(false)}>
+                    <Text style={styles.resetButtonText}>Exit</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </TouchableWithoutFeedback>
+          </Modal>
+
+          {/* Excel upload modal */}
+          <Modal visible={excelModalVisible} transparent animationType="slide">
+            <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+              <View style={styles.modalOverlay}>
+                <View style={styles.modalContainer}>
+                  <Text style={styles.label}>Upload Excel File</Text>
+                  <TouchableOpacity style={styles.button} onPress={pickExcelFile}>
+                    <Text style={styles.buttonText}>Choose File</Text>
+                  </TouchableOpacity>
+                  {selectedFile && <Text style={styles.helper}>Selected: {selectedFile.name}</Text>}
+                  <TouchableOpacity style={styles.button} onPress={sendExcelFile}>
+                    <Text style={styles.buttonText}>Send</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={styles.resetButton} onPress={() => setExcelModalVisible(false)}>
+                    <Text style={styles.resetButtonText}>Exit</Text>
                   </TouchableOpacity>
                 </View>
               </View>
@@ -210,85 +239,19 @@ export default function PredictScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    padding: 20,
-    paddingBottom: 80,
-    backgroundColor: '#f5f5f5',
-  },
-  title: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    marginBottom: 20,
-    textAlign: 'center',
-  },
-  inputGroup: {
-    marginBottom: 12,
-  },
-  label: {
-    marginBottom: 4,
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  helper: {
-    fontSize: 12,
-    color: '#666',
-    marginBottom: 4,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#999',
-    padding: 10,
-    borderRadius: 6,
-    backgroundColor: '#fff',
-    marginBottom: 10,
-  },
-  button: {
-    backgroundColor: '#1E90FF',
-    padding: 16,
-    borderRadius: 8,
-    marginTop: 16,
-  },
-  buttonText: {
-    color: '#fff',
-    textAlign: 'center',
-    fontSize: 17,
-    fontWeight: '600',
-  },
-  resetButton: {
-    backgroundColor: '#ccc',
-    padding: 14,
-    borderRadius: 8,
-    marginTop: 12,
-  },
-  resetButtonText: {
-    color: '#333',
-    textAlign: 'center',
-    fontSize: 16,
-    fontWeight: '500',
-  },
-  result: {
-    marginTop: 30,
-    padding: 15,
-    backgroundColor: '#e6f7ff',
-    borderRadius: 8,
-  },
-  prediction: {
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  probability: {
-    fontSize: 16,
-    marginTop: 5,
-  },
-  modalOverlay: {
-    flex: 1,
-    justifyContent: 'center',
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    padding: 20,
-  },
-  modalContainer: {
-    backgroundColor: '#fff',
-    borderRadius: 10,
-    padding: 20,
-  },
+  container: { padding: 20, paddingBottom: 80, backgroundColor: '#f5f5f5' },
+  title: { fontSize: 22, fontWeight: 'bold', marginBottom: 20, textAlign: 'center' },
+  inputGroup: { marginBottom: 12 },
+  label: { marginBottom: 4, fontSize: 14, fontWeight: '600' },
+  helper: { fontSize: 12, color: '#666', marginBottom: 4 },
+  input: { borderWidth: 1, borderColor: '#999', padding: 10, borderRadius: 6, backgroundColor: '#fff', marginBottom: 10 },
+  button: { backgroundColor: '#1E90FF', padding: 16, borderRadius: 8, marginTop: 16 },
+  buttonText: { color: '#fff', textAlign: 'center', fontSize: 17, fontWeight: '600' },
+  resetButton: { backgroundColor: '#ccc', padding: 14, borderRadius: 8, marginTop: 12 },
+  resetButtonText: { color: '#333', textAlign: 'center', fontSize: 16, fontWeight: '500' },
+  result: { marginTop: 30, padding: 15, backgroundColor: '#e6f7ff', borderRadius: 8 },
+  prediction: { fontSize: 18, fontWeight: 'bold' },
+  probability: { fontSize: 16, marginTop: 5 },
+  modalOverlay: { flex: 1, justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.5)', padding: 20 },
+  modalContainer: { backgroundColor: '#fff', borderRadius: 10, padding: 20 },
 });
