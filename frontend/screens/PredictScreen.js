@@ -28,6 +28,7 @@ export default function PredictScreen() {
   const [inputs, setInputs] = useState({});
   const [result, setResult] = useState(null);
   const [collapseRisk, setCollapseRisk] = useState('');
+  const [wasManuallyEdited, setWasManuallyEdited] = useState(false);
   const [code, setCode] = useState('');
   const [modalVisible, setModalVisible] = useState(false);
   const [requestFields, setRequestFields] = useState({ email: '', institution: '', first: '', last: '' });
@@ -51,8 +52,6 @@ export default function PredictScreen() {
   };
 
   const handleSubmit = async () => {
-  console.log("🟦 Submit button clicked");
-
     try {
       const response = await fetch("https://jrl.onrender.com/predict", {
         method: "POST",
@@ -60,7 +59,6 @@ export default function PredictScreen() {
         body: JSON.stringify(inputs),
       });
       const json = await response.json();
-      console.log("✅ Prediction result:", json);
       setResult(json);
       if (!collapseRisk) setCollapseRisk(json.prediction.toString());
     } catch (error) {
@@ -70,11 +68,29 @@ export default function PredictScreen() {
 
   const handleDatabaseSubmit = () => {
   console.log("🟨 Submit to database clicked");
+  const trimmedRisk = collapseRisk.trim();
 
+  if (!wasManuallyEdited) {
+    console.log("⚠️ Submission blocked: not manually edited");
+    setCollapseRisk('');
+    Alert.alert("Manual Entry Required", "Please manually enter collapse risk (0 or 1).");
+    return;
+  }
+
+  if (trimmedRisk !== '0' && trimmedRisk !== '1') {
+    console.log("❌ Invalid collapse risk entered:", trimmedRisk);
+    Alert.alert("Invalid Entry", "Collapse risk must be 0 or 1.");
+    return;
+  }
+
+  console.log("✅ Valid manual entry:", trimmedRisk);
+  setCollapseRisk(trimmedRisk);
+  setModalVisible(true);
+};
   const trimmedRisk = collapseRisk.trim();
   if (trimmedRisk === result?.prediction?.toString()) {
-    console.log('⚠️ Auto-filled value matches prediction. Clearing...');
     setCollapseRisk('');
+    console.log('Clearing auto-filled value');
     Alert.alert("Manual Entry Required", "Please enter collapse risk manually (0 or 1).");
     return;
   }
@@ -87,18 +103,14 @@ export default function PredictScreen() {
       Alert.alert("Invalid Entry", "Collapse risk must be 0 or 1.");
       return;
     }
-    console.log('✅ Valid manual entry:', trimmedRisk);
-  setCollapseRisk(trimmedRisk);
+    setCollapseRisk(trimmedRisk);
   setModalVisible(true);
   };
 
   const handleRequestCode = async () => {
-  console.log("📩 Request code clicked");
-
     const emailIsValid = /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(requestFields.email);
     if (!emailIsValid) {
-      console.log('❌ Invalid email entered');
-    Alert.alert("Invalid Email", "Please enter a valid email address.");
+      Alert.alert("Invalid Email", "Please enter a valid email address.");
       return;
     }
     const oneTime = `ONE-${Math.random().toString(36).substr(2, 6).toUpperCase()}`;
@@ -114,7 +126,6 @@ export default function PredictScreen() {
       }),
     });
 
-    console.log('✅ Code request email sent');
     Alert.alert("Codes Sent", "Codes have been sent to ShelbyEsc@gmail.com.");
     setRequestFields({ email: '', institution: '', first: '', last: '' });
   };
@@ -152,7 +163,6 @@ export default function PredictScreen() {
         copyToCacheDirectory: true
       });
       if (res.type === 'success') {
-        console.log('📄 File selected:', res.name);
         setSelectedFile(res);
       }
     } catch (error) {
@@ -161,7 +171,6 @@ export default function PredictScreen() {
   };
 
   const sendExcelFile = async () => {
-    console.log('📤 Simulated Excel file upload triggered');
     Alert.alert("Upload Placeholder", "Simulated file upload complete.");
     setExcelModalVisible(false);
     setSelectedFile(null);
@@ -170,8 +179,8 @@ export default function PredictScreen() {
   const handleReset = () => {
     setInputs({});
     setResult(null);
-    console.log('⚠️ Auto-filled value matches prediction. Clearing...');
     setCollapseRisk('');
+    console.log('Clearing auto-filled value');
   };
 
   return (
@@ -202,7 +211,10 @@ export default function PredictScreen() {
             keyboardType="numeric"
             style={styles.input}
             value={collapseRisk}
-            onChangeText={setCollapseRisk}
+            onChangeText={(text) => {
+              setCollapseRisk(text);
+              setWasManuallyEdited(true);
+            }}
           />
 
           <TouchableOpacity style={styles.button} onPress={handleDatabaseSubmit}>
