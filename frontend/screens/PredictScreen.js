@@ -66,6 +66,16 @@ export default function PredictScreen() {
   };
 
   const handleDatabaseSubmit = () => {
+  if (collapseRisk === result?.prediction?.toString()) {
+    setCollapseRisk('');
+    Alert.alert("Manual Entry Required", "Please enter collapse risk manually (0 or 1).");
+    return;
+  }
+  if (collapseRisk !== '0' && collapseRisk !== '1') {
+    Alert.alert("Invalid Entry", "Collapse risk must be 0 or 1.");
+    return;
+  }
+
     if (collapseRisk !== '0' && collapseRisk !== '1') {
       Alert.alert("Invalid Entry", "Collapse risk must be 0 or 1.");
       return;
