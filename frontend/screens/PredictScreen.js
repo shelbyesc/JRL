@@ -25,6 +25,24 @@ const featureList = [
 const binaryFields = ["male", "white", "toxic", "medical", "idiopathic", "trauma"];
 
 export default function PredictScreen() {
+  // --- component state ---
+  const [inputs, setInputs] = useState({});
+  const [result, setResult] = useState(null);
+  const [collapseRisk, setCollapseRisk] = useState('');
+  const [wasManuallyEdited, setWasManuallyEdited] = useState(false);
+  const [code, setCode] = useState('');
+  const [modalVisible, setModalVisible] = useState(false);
+  const [requestFields, setRequestFields] = useState({ email: '', institution: '', first: '', last: '' });
+  const [excelModalVisible, setExcelModalVisible] = useState(false);
+  const [selectedFile, setSelectedFile] = useState(null);
+
+  useEffect(() => {
+    (async () => {
+      const savedCode = await AsyncStorage.getItem('userCode');
+      if (savedCode) setCode(savedCode);
+    })();
+  }, []);
+
   const [inputs, setInputs] = useState({});
   const [result, setResult] = useState(null);
   const [collapseRisk, setCollapseRisk] = useState('');
