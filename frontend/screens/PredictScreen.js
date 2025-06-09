@@ -58,7 +58,6 @@ export default function PredictScreen() {
         body: JSON.stringify(inputs),
       });
       const json = await response.json();
-      console.log("Prediction result:", json);
       setResult(json);
       if (!collapseRisk) setCollapseRisk(json.prediction.toString());
     } catch (error) {
@@ -75,6 +74,11 @@ export default function PredictScreen() {
   };
 
   const handleRequestCode = async () => {
+    const emailIsValid = /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(requestFields.email);
+    if (!emailIsValid) {
+      Alert.alert("Invalid Email", "Please enter a valid email address.");
+      return;
+    }
     const oneTime = `ONE-${Math.random().toString(36).substr(2, 6).toUpperCase()}`;
     const permanent = `PERM-${Math.random().toString(36).substr(2, 6).toUpperCase()}`;
 
@@ -186,6 +190,17 @@ export default function PredictScreen() {
           <TouchableOpacity style={styles.resetButton} onPress={handleReset}>
             <Text style={styles.resetButtonText}>Reset</Text>
           </TouchableOpacity>
+
+          {result && (
+            <View style={styles.result}>
+              <Text style={styles.prediction}>
+                Prediction: {result.prediction === 1 ? "High Risk" : "Low Risk"}
+              </Text>
+              <Text style={styles.probability}>
+                Probability: {result.probability ?? 'N/A'}%
+              </Text>
+            </View>
+          )}
 
           <Modal visible={modalVisible} transparent animationType="slide">
             <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
