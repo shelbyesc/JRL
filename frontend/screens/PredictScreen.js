@@ -42,23 +42,6 @@ export default function PredictScreen() {
     })();
   }, []);
 
-  const [inputs, setInputs] = useState({});
-  const [result, setResult] = useState(null);
-  const [collapseRisk, setCollapseRisk] = useState('');
-  const [wasManuallyEdited, setWasManuallyEdited] = useState(false);
-  const [code, setCode] = useState('');
-  const [modalVisible, setModalVisible] = useState(false);
-  const [requestFields, setRequestFields] = useState({ email: '', institution: '', first: '', last: '' });
-  const [excelModalVisible, setExcelModalVisible] = useState(false);
-  const [selectedFile, setSelectedFile] = useState(null);
-
-  useEffect(() => {
-    (async () => {
-      const savedCode = await AsyncStorage.getItem('userCode');
-      if (savedCode) setCode(savedCode);
-    })();
-  }, []);
-
   const handleChange = (key, value) => {
     if (binaryFields.includes(key) && value !== '0' && value !== '1') {
       Alert.alert("Input Error", `${key} must be 0 or 1`);
