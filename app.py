@@ -1,3 +1,4 @@
+
 import os
 import pandas as pd
 import joblib
@@ -42,6 +43,30 @@ def predict():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+@app.route("/submit_data", methods=["POST"])
+def submit_data():
+    try:
+        data = request.json
+        collapseRisk = data.get("collapseRisk", "")
+        calculated = data.get("calculated", "")
+        code = data.get("code", "")
+        if not collapseRisk or not code:
+            return jsonify({"error": "Missing collapseRisk or code"}), 400
+
+        row = {k: data.get(k, None) for k in feature_names}
+        row["collapseRisk"] = collapseRisk
+        row["calculated_collapseRisk"] = calculated
+        row["code"] = code
+
+        file = "labraltearForModel.xlsx"
+        df = pd.read_excel(file)
+        df = df.append(row, ignore_index=True)
+        df.to_excel(file, index=False)
+
+        return jsonify({"status": "submitted", "file": file})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 @app.route("/send_code_email", methods=["POST"])
 def send_code_email():
     try:
@@ -69,11 +94,11 @@ One-time: {one_time}
 Permanent: {permanent}
 """)
 
-        # 🔐 Update these with your actual Gmail + App Password
+        # Replace with actual credentials
         smtp_server = "smtp.gmail.com"
         smtp_port = 587
-        smtp_user = "shelbyesc@gmail.com"        # 🔁 Replace with your Gmail
-        smtp_pass = "5698tara"      # 🔁 Replace with App Password
+        smtp_user = "shelbyesc@gmail.com"
+        smtp_pass = "5698tara"
 
         with smtplib.SMTP(smtp_server, smtp_port) as smtp:
             smtp.starttls()
