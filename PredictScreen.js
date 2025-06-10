@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import {
   ScrollView,
   View,
@@ -11,7 +12,7 @@ import {
   TouchableWithoutFeedback,
   Keyboard,
   Platform,
-  Modal,
+  Modal
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as DocumentPicker from 'expo-document-picker';
@@ -26,15 +27,12 @@ const binaryFields = ["male", "white", "toxic", "medical", "idiopathic", "trauma
 export default function PredictScreen() {
   const [inputs, setInputs] = useState({});
   const [result, setResult] = useState(null);
-  const [enteredCollapseRisk, setEnteredCollapseRisk] = useState('');
-  const [calculatedCollapseRisk, setCalculatedCollapseRisk] = useState('');
+  const [collapseRisk, setCollapseRisk] = useState('');
   const [code, setCode] = useState('');
   const [modalVisible, setModalVisible] = useState(false);
   const [requestFields, setRequestFields] = useState({ email: '', institution: '', first: '', last: '' });
   const [excelModalVisible, setExcelModalVisible] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
-
-  const inputRefs = useRef(featureList.map(() => React.createRef()));
 
   useEffect(() => {
     (async () => {
@@ -59,27 +57,36 @@ export default function PredictScreen() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(inputs),
       });
-      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
       const json = await response.json();
       setResult(json);
-      setCalculatedCollapseRisk(json.prediction.toString());
+      if (!collapseRisk) setCollapseRisk(json.prediction.toString());
     } catch (error) {
-      console.error("API request failed:", error);
       Alert.alert("Error", "Could not connect to the prediction API.");
     }
   };
 
   const handleDatabaseSubmit = () => {
-    if (!enteredCollapseRisk || (enteredCollapseRisk !== '0' && enteredCollapseRisk !== '1')) {
-      Alert.alert("Manual Entry Required", "Please enter collapse risk as 0 or 1.");
+  if (collapseRisk === result?.prediction?.toString()) {
+    setCollapseRisk('');
+    Alert.alert("Manual Entry Required", "Please enter collapse risk manually (0 or 1).");
+    return;
+  }
+  if (collapseRisk !== '0' && collapseRisk !== '1') {
+    Alert.alert("Invalid Entry", "Collapse risk must be 0 or 1.");
+    return;
+  }
+
+    if (collapseRisk !== '0' && collapseRisk !== '1') {
+      Alert.alert("Invalid Entry", "Collapse risk must be 0 or 1.");
       return;
     }
     setModalVisible(true);
   };
 
   const handleRequestCode = async () => {
-    if (!requestFields.email || !/\S+@\S+\.\S+/.test(requestFields.email)) {
-      Alert.alert("Input Error", "Please enter a valid email.");
+    const emailIsValid = /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(requestFields.email);
+    if (!emailIsValid) {
+      Alert.alert("Invalid Email", "Please enter a valid email address.");
       return;
     }
     const oneTime = `ONE-${Math.random().toString(36).substr(2, 6).toUpperCase()}`;
@@ -95,7 +102,7 @@ export default function PredictScreen() {
       }),
     });
 
-    Alert.alert("Codes Sent", "Codes have been sent for approval to ShelbyEsc@gmail.com.");
+    Alert.alert("Codes Sent", "Codes have been sent to ShelbyEsc@gmail.com.");
     setRequestFields({ email: '', institution: '', first: '', last: '' });
   };
 
@@ -103,21 +110,27 @@ export default function PredictScreen() {
     if (code.startsWith("PERM-")) {
       await AsyncStorage.setItem("userCode", code);
     }
-    const payload = { ...inputs, collapseRisk: enteredCollapseRisk, code };
+
+    const payload = { ...inputs, collapseRisk, code };
+
     const response = await fetch("https://jrl.onrender.com/submit_data", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });
+
     if (response.ok) {
-      Alert.alert("Submitted", "Data submitted and stored.");
+      Alert.alert("Submitted", "Data submitted successfully.");
     } else {
       Alert.alert("Error", "Submission failed.");
     }
+
     setModalVisible(false);
   };
 
-  const handleExcelSubmit = () => setExcelModalVisible(true);
+  const handleExcelSubmit = async () => {
+    setExcelModalVisible(true);
+  };
 
   const pickExcelFile = async () => {
     try {
@@ -125,65 +138,38 @@ export default function PredictScreen() {
         type: ['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/vnd.ms-excel'],
         copyToCacheDirectory: true
       });
-      if (res.type === 'success') setSelectedFile(res);
+      if (res.type === 'success') {
+        setSelectedFile(res);
+      }
     } catch (error) {
       Alert.alert("Error", "Failed to pick Excel file.");
     }
   };
 
   const sendExcelFile = async () => {
-    if (!selectedFile) {
-      Alert.alert("Error", "No file selected.");
-      return;
-    }
-    try {
-      const formData = new FormData();
-      formData.append("file", {
-        uri: selectedFile.uri,
-        name: selectedFile.name,
-        type: selectedFile.mimeType || "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-      });
-      const response = await fetch("https://jrl.onrender.com/submit_excel", {
-        method: "POST",
-        headers: { "Content-Type": "multipart/form-data" },
-        body: formData,
-      });
-      const result = await response.json();
-      if (response.ok) Alert.alert("Success", `File uploaded: ${result.file}`);
-      else Alert.alert("Upload Failed", result.error || "Unknown error");
-      setExcelModalVisible(false);
-      setSelectedFile(null);
-    } catch (error) {
-      console.error("Upload error:", error);
-      Alert.alert("Error", "Failed to upload Excel file.");
-    }
+    Alert.alert("Upload Placeholder", "Simulated file upload complete.");
+    setExcelModalVisible(false);
+    setSelectedFile(null);
   };
 
   const handleReset = () => {
     setInputs({});
     setResult(null);
-    setEnteredCollapseRisk('');
+    setCollapseRisk('');
   };
 
   return (
     <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{ flex: 1 }}>
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
-          <Text style={styles.title}>{'\n\n'}Collapse Risk Prediction</Text>
+          <Text style={styles.title}>{"\n\n"}Collapse Risk Prediction</Text>
 
-          {featureList.map((key, index) => (
+          {featureList.map((key) => (
             <View key={key} style={styles.inputGroup}>
               <Text style={styles.label}>{key}</Text>
               {binaryFields.includes(key) && <Text style={styles.helper}>Enter 0 or 1</Text>}
               <TextInput
-                ref={inputRefs.current[index]}
-                keyboardType="default"
-                returnKeyType="next"
-                onSubmitEditing={() => {
-                  if (index < featureList.length - 1) inputRefs.current[index + 1].current.focus();
-                  else Keyboard.dismiss();
-                }}
-                blurOnSubmit={false}
+                keyboardType="numeric"
                 style={styles.input}
                 onChangeText={(text) => handleChange(key, text)}
                 value={inputs[key] !== undefined ? String(inputs[key]) : ''}
@@ -191,31 +177,17 @@ export default function PredictScreen() {
             </View>
           ))}
 
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Calculated Risk (Read-only)</Text>
-            <TextInput editable={false} value={calculatedCollapseRisk} style={[styles.input, { backgroundColor: '#eee' }]} />
-          </View>
-
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Entered Risk (Manual, required for submission)</Text>
-            <TextInput
-              placeholder="Enter 0 or 1"
-              style={styles.input}
-              keyboardType="default"
-              value={enteredCollapseRisk}
-              onChangeText={(val) => {
-                if (val !== '0' && val !== '1') {
-                  Alert.alert("Manual Entry Error", "Collapse risk must be 0 or 1.");
-                  return;
-                }
-                setEnteredCollapseRisk(val);
-              }}
-            />
-          </View>
-
           <TouchableOpacity style={styles.button} onPress={handleSubmit}>
             <Text style={styles.buttonText}>Predict</Text>
           </TouchableOpacity>
+
+          <TextInput
+            placeholder="Enter collapse risk (0 or 1)"
+            keyboardType="numeric"
+            style={styles.input}
+            value={collapseRisk}
+            onChangeText={setCollapseRisk}
+          />
 
           <TouchableOpacity style={styles.button} onPress={handleDatabaseSubmit}>
             <Text style={styles.buttonText}>Submit to database</Text>
@@ -235,7 +207,7 @@ export default function PredictScreen() {
                 Prediction: {result.prediction === 1 ? "High Risk" : "Low Risk"}
               </Text>
               <Text style={styles.probability}>
-                Probability: {result.probability}%
+                Probability: {result.probability ?? 'N/A'}%
               </Text>
             </View>
           )}
@@ -306,9 +278,6 @@ const styles = StyleSheet.create({
   buttonText: { color: '#fff', textAlign: 'center', fontSize: 17, fontWeight: '600' },
   resetButton: { backgroundColor: '#ccc', padding: 14, borderRadius: 8, marginTop: 12 },
   resetButtonText: { color: '#333', textAlign: 'center', fontSize: 16, fontWeight: '500' },
-  result: { marginTop: 30, padding: 15, backgroundColor: '#e6f7ff', borderRadius: 8 },
-  prediction: { fontSize: 18, fontWeight: 'bold' },
-  probability: { fontSize: 16, marginTop: 5 },
   modalOverlay: { flex: 1, justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.5)', padding: 20 },
   modalContainer: { backgroundColor: '#fff', borderRadius: 10, padding: 20 },
 });

@@ -1,11 +1,16 @@
-
 import os
 import pandas as pd
 import joblib
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-import smtplib
-from email.message import EmailMessage
+from sendgrid import SendGridAPIClient
+from sendgrid.helpers.mail import Mail
+from dotenv import load_dotenv
+from werkzeug.utils import secure_filename
+from datetime import datetime
+
+# Load environment variables
+load_dotenv()
 
 app = Flask(__name__)
 CORS(app)
@@ -57,57 +62,28 @@ def submit_data():
         row["collapseRisk"] = collapseRisk
         row["calculated_collapseRisk"] = calculated
         row["code"] = code
+        row["date_of_submission"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-        file = "labraltearForModel.xlsx"
-        df = pd.read_excel(file)
-        df = df.append(row, ignore_index=True)
-        df.to_excel(file, index=False)
+        original_file = "labraltearForModel.xlsx"
+        base_name = "labraltearForModel"
+        extension = ".xlsx"
+        backup_folder = "backups"
+        os.makedirs(backup_folder, exist_ok=True)
 
-        return jsonify({"status": "submitted", "file": file})
+        i = 1
+        while os.path.exists(os.path.join(backup_folder, f"{base_name}({i}){extension}")):
+            i += 1
+        backup_file = os.path.join(backup_folder, f"{base_name}({i}){extension}")
+
+        if os.path.exists(original_file):
+            os.rename(original_file, backup_file)
+        else:
+            return jsonify({"error": "Original database file not found."}), 500
+
+        df = pd.read_excel(backup_file)
+        df = pd.concat([df, pd.DataFrame([row])], ignore_index=True)
+        df.to_excel(original_file, index=False)
+
+        return jsonify({"status": "submitted", "backup": backup_file, "current": original_file})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
-@app.route("/send_code_email", methods=["POST"])
-def send_code_email():
-    try:
-        data = request.json
-        email = data.get("email", "")
-        institution = data.get("institution", "")
-        first = data.get("first", "")
-        last = data.get("last", "")
-        one_time = data.get("oneTimeCode", "")
-        permanent = data.get("permanentCode", "")
-
-        msg = EmailMessage()
-        msg["Subject"] = "🔐 New Code Request for JRL App"
-        msg["From"] = "noreply@yourapp.com"
-        msg["To"] = "ShelbyEsc@gmail.com"
-        msg.set_content(f"""
-New code request received:
-
-Requester Email: {email}
-Institution: {institution}
-Name: {first} {last}
-
-Generated Codes:
-One-time: {one_time}
-Permanent: {permanent}
-""")
-
-        # Replace with actual credentials
-        smtp_server = "smtp.gmail.com"
-        smtp_port = 587
-        smtp_user = "shelbyesc@gmail.com"
-        smtp_pass = "5698tara"
-
-        with smtplib.SMTP(smtp_server, smtp_port) as smtp:
-            smtp.starttls()
-            smtp.login(smtp_user, smtp_pass)
-            smtp.send_message(msg)
-
-        return jsonify({"status": "email sent"})
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)

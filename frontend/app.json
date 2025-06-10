@@ -16,7 +16,7 @@
     },
     "ios": {
       "bundleIdentifier": "com.salshel6.collapseriskapp",
-      "buildNumber": "17",
+      "buildNumber": "21",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
