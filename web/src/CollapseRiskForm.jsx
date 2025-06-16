@@ -37,16 +37,21 @@ const CollapseRiskForm = () => {
       setPrediction(res.data.prediction);
       setProbability(res.data.probability);
     } catch (err) {
-      console.error(err);
+      console.error("Prediction error:", err);
       let msg = "Unknown error from backend";
       if (err.response?.data?.error) {
         msg = err.response.data.error;
       } else if (err.response?.data) {
-        msg = JSON.stringify(err.response.data);
+        try {
+          msg = JSON.stringify(err.response.data, null, 2);
+        } catch {
+          msg = "[Error object]";
+        }
       } else if (err.message) {
         msg = err.message;
       }
-      setError("Prediction failed: " + msg);
+      setError("Prediction failed:
+" + msg);
     } finally {
       setLoading(false);
     }
@@ -159,7 +164,7 @@ const CollapseRiskForm = () => {
         </button>
       </div>
 
-      {error && <p style={{ color: "red", marginTop: 20 }}>{error}</p>}
+      {error && <p style={{ color: "red", marginTop: 20, whiteSpace: "pre-wrap" }}>{error}</p>}
       {message && <p style={{ color: "green", marginTop: 20 }}>{message}</p>}
     </div>
   );
