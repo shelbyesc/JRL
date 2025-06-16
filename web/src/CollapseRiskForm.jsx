@@ -38,8 +38,16 @@ const CollapseRiskForm = () => {
       setProbability(res.data.probability);
     } catch (err) {
       console.error(err);
-      const msg =
-        err.response?.data?.error || err.message || "Unknown error from backend";
+   let msg = "Unknown error from backend";
+if (err.response?.data?.error) {
+  msg = err.response.data.error;
+} else if (err.response?.data) {
+  msg = JSON.stringify(err.response.data);  // fallback for object-like errors
+} else if (err.message) {
+  msg = err.message;
+}
+setError("Prediction failed: " + msg);
+
       setError("Prediction failed: " + msg);
     } finally {
       setLoading(false);
