@@ -50,8 +50,7 @@ const CollapseRiskForm = () => {
       } else if (err.message) {
         msg = err.message;
       }
-      setError("Prediction failed:
-" + msg);
+      setError("Prediction failed:\n" + msg);
     } finally {
       setLoading(false);
     }
