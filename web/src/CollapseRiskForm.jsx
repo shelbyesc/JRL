@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import axios from "axios";
 
 const featureList = [
   "shaftangle", "offset", "headdiameter", "lateraledge", "acetabdiameter",
@@ -22,9 +21,7 @@ const CollapseRiskForm = () => {
   const [message, setMessage] = useState("");
 
   const apiUrl = import.meta.env.VITE_API_URL;
-  if (!apiUrl) {
-    console.warn("⚠️ VITE_API_URL is not defined in .env.");
-  }
+  if (!apiUrl) console.warn("⚠️ VITE_API_URL is not defined.");
 
   const handleChange = (key, value) => {
     const num = parseFloat(value);
@@ -39,24 +36,17 @@ const CollapseRiskForm = () => {
     setError("");
     setMessage("");
     try {
-      const res = await axios.post(`${apiUrl}/predict`, inputs);
-      setPrediction(res.data.prediction);
-      setProbability(res.data.probability);
+      const res = await fetch(`${apiUrl}/predict`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(inputs)
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Backend error");
+      setPrediction(data.prediction);
+      setProbability(data.probability);
     } catch (err) {
-      console.error("Prediction error:", err);
-      let msg = "Unknown error from backend";
-      if (err.response?.data?.error) {
-        msg = err.response.data.error;
-      } else if (err.response?.data) {
-        try {
-          msg = JSON.stringify(err.response.data, null, 2);
-        } catch {
-          msg = "[Error object]";
-        }
-      } else if (err.message) {
-        msg = err.message;
-      }
-      setError("Prediction failed:\n" + msg);
+      setError("Prediction failed:\n" + err.message);
     } finally {
       setLoading(false);
     }
@@ -70,14 +60,19 @@ const CollapseRiskForm = () => {
     const oneTime = "ONE-" + Math.random().toString(36).substr(2, 6).toUpperCase();
     const permanent = "PERM-" + Math.random().toString(36).substr(2, 6).toUpperCase();
     try {
-      await axios.post(`${apiUrl}/send_code_email`, {
-        email,
-        institution,
-        first,
-        last,
-        oneTimeCode: oneTime,
-        permanentCode: permanent
+      const res = await fetch(`${apiUrl}/send_code_email`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email,
+          institution,
+          first,
+          last,
+          oneTimeCode: oneTime,
+          permanentCode: permanent
+        })
       });
+      if (!res.ok) throw new Error();
       alert(`Codes sent to ${email}.`);
     } catch {
       alert("Failed to send code.");
@@ -91,12 +86,17 @@ const CollapseRiskForm = () => {
       return;
     }
     try {
-      await axios.post(`${apiUrl}/submit_data`, {
-        ...inputs,
-        collapseRisk: trimmedRisk,
-        calculated: prediction,
-        code: code
+      const res = await fetch(`${apiUrl}/submit_data`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...inputs,
+          collapseRisk: trimmedRisk,
+          calculated: prediction,
+          code: code
+        })
       });
+      if (!res.ok) throw new Error();
       setMessage("✅ Submitted successfully.");
     } catch {
       setError("Submission failed.");
