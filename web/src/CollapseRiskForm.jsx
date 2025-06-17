@@ -22,9 +22,15 @@ const CollapseRiskForm = () => {
   const [message, setMessage] = useState("");
 
   const apiUrl = import.meta.env.VITE_API_URL;
+  if (!apiUrl) {
+    console.warn("⚠️ VITE_API_URL is not defined in .env.");
+  }
 
   const handleChange = (key, value) => {
-    setInputs({ ...inputs, [key]: parseFloat(value) || 0 });
+    const num = parseFloat(value);
+    if (!isNaN(num)) {
+      setInputs({ ...inputs, [key]: num });
+    }
   };
 
   const handlePredict = async (e) => {
@@ -72,21 +78,22 @@ const CollapseRiskForm = () => {
         oneTimeCode: oneTime,
         permanentCode: permanent
       });
-      alert("Codes sent to ShelbyEsc@gmail.com.");
+      alert(`Codes sent to ${email}.`);
     } catch {
       alert("Failed to send code.");
     }
   };
 
   const handleSubmitData = async () => {
-    if (!code || !enteredRisk || !["0", "1"].includes(enteredRisk)) {
+    const trimmedRisk = enteredRisk.trim();
+    if (!code || !["0", "1"].includes(trimmedRisk)) {
       alert("Enter a valid code and collapse risk (0 or 1).");
       return;
     }
     try {
       await axios.post(`${apiUrl}/submit_data`, {
         ...inputs,
-        collapseRisk: enteredRisk,
+        collapseRisk: trimmedRisk,
         calculated: prediction,
         code: code
       });
@@ -121,7 +128,7 @@ const CollapseRiskForm = () => {
         <div style={{ marginTop: 20 }}>
           <h3>Result</h3>
           <p><strong>Prediction:</strong> {prediction === 1 ? "High Risk" : "Low Risk"}</p>
-          <p><strong>Probability:</strong> {probability}%</p>
+          <p><strong>Probability:</strong> {(probability * 100).toFixed(2)}%</p>
         </div>
       )}
 
