@@ -88,6 +88,38 @@ def submit_data():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+@app.route("/send_code_email", methods=["POST"])
+def send_code_email():
+    try:
+        data = request.json
+        email = data.get("email")
+        institution = data.get("institution")
+        first = data.get("first")
+        last = data.get("last")
+        one_time = data.get("oneTimeCode")
+        permanent = data.get("permanentCode")
+
+        if not all([email, institution, first, last, one_time, permanent]):
+            return jsonify({"error": "Missing one or more required fields"}), 400
+
+        message = Mail(
+            from_email="shelbyesc@gmail.com",  # ✅ Replace with your verified sender
+            to_emails=email,
+            subject="Your JRL Submission Code",
+            plain_text_content=(
+                f"Hi {first} {last} from {institution},\n\n"
+                f"Your one-time code: {one_time}\n"
+                f"Your permanent code: {permanent}\n\n"
+                f"Thank you for using the Collapse Risk Predictor!"
+            )
+        )
+
+        sg = SendGridAPIClient(os.getenv("SENDGRID_API_KEY"))
+        sg.send(message)
+        return jsonify({"status": "email sent"})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 # ✅ Required to run on Render or any cloud platform that sets PORT dynamically
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
